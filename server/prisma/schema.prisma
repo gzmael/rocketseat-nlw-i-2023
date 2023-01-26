@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+  theme    = "forest"
+  output   = "ERD.png"
+}
+
+model Habit {
+  id        Int      @id @default(autoincrement())
+  publicId  String   @unique @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  habitWeekDays HabitWeekDays[]
+  dayHabits     DayHabit[]
+
+  @@map("habits")
+}
+
+model HabitWeekDays {
+  publicId String @unique @default(cuid())
+
+  habitId  Int
+  week_day Int
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([habitId, week_day])
+  @@unique([habitId, week_day])
+  @@map("habit_week_days")
+}
+
+model Day {
+  id       Int    @id @default(autoincrement())
+  publicId String @unique @default(cuid())
+
+  date      DateTime
+  dayHabits DayHabit[]
+
+  @@unique([date])
+  @@map("days")
+}
+
+model DayHabit {
+  publicId String @unique @default(cuid())
+
+  dayId   Int
+  habitId Int
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  day   Day   @relation(fields: [dayId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([dayId, habitId])
+  @@unique([dayId, habitId])
+  @@index([habitId])
+  @@map("day_habits")
+}
